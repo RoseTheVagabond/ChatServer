@@ -7,28 +7,26 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-class ClientHandler {
+class ClientManager {
     private final Socket socket;
+    private final int port;
     private final ChatServer server;
     private final BufferedReader in;
     private final PrintWriter out;
     private String username;
     private volatile boolean running = true;
 
-    public ClientHandler(Socket socket, ChatServer server) throws IOException {
+    public ClientManager(Socket socket, ChatServer server) throws IOException {
         this.socket = socket;
+        this.port = socket.getPort();
         this.server = server;
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.out = new PrintWriter(socket.getOutputStream(), true);
     }
 
-    public Socket getSocket() {
-        return socket;
-    }
-
     public void start() throws IOException {
         // Send welcome message and prompt for username
-        sendMessage("Welcome to the chat server! Please enter your username:");
+        sendMessage("Welcome to the chat server!");
 
         // Read username from client
         username = in.readLine();
@@ -52,7 +50,6 @@ class ClientHandler {
             handleMessage(message);
         }
 
-        // Client disconnected
         disconnect();
     }
 

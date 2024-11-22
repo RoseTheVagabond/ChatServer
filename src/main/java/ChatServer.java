@@ -1,5 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -12,7 +14,7 @@ public class ChatServer extends Thread {
     private final int port;
     private final String serverName;
     private final Set<String> bannedPhrases;
-    private final Map<String, ClientHandler> clients = new ConcurrentHashMap<>();
+    private final Map<String, ClientManager> clients = new ConcurrentHashMap<>();
     private ServerSocket serverSocket;
     private volatile boolean running = true;
     private final ServerGUI gui;
@@ -23,7 +25,7 @@ public class ChatServer extends Thread {
 
         this.port = Integer.parseInt(config.get("server.port"));
         this.serverName = config.get("server.name");
-        this.bannedPhrases = ConcurrentHashMap.newKeySet();
+        this.bannedPhrases = new HashSet<>();
         updateBannedPhrases(config.get("banned.phrases").split(","));
 
         this.gui = new ServerGUI(this);
@@ -124,8 +126,8 @@ public class ChatServer extends Thread {
 
     private void handleNewClient(Socket clientSocket) {
         try {
-            ClientHandler handler = new ClientHandler(clientSocket, this);
-            handler.start();
+            ClientManager manager = new ClientManager(clientSocket, this);
+            manager.start();
         } catch (IOException e) {
             if (running) {
                 gui.appendLog("Error handling client: " + e.getMessage());
@@ -138,8 +140,8 @@ public class ChatServer extends Thread {
         }
     }
 
-    public void registerClient(String username, ClientHandler handler) {
-        clients.put(username, handler);
+    public void registerClient(String username, ClientManager manager) {
+        clients.put(username, manager);
         broadcastMessage(null, username + " has joined the chat");
         sendClientList();
     }
@@ -165,14 +167,14 @@ public class ChatServer extends Thread {
         String bannedWord = containsBannedPhrase(message);
 
         if (bannedWord != null) {
-            ClientHandler senderHandler = clients.get(sender);
-            if (senderHandler != null) {
-                senderHandler.sendMessage("Server: Message contains banned content ('" + bannedWord + "') and was not sent");
+            ClientManager manager = clients.get(sender);
+            if (manager != null) {
+                manager.sendMessage("Server: Message contains banned content ('" + bannedWord + "') and was not sent");
             }
             return;
         }
 
-        for (Map.Entry<String, ClientHandler> entry : clients.entrySet()) {
+        for (Map.Entry<String, ClientManager> entry : clients.entrySet()) {
             if (recipients == null || recipients.contains(entry.getKey())) {
                 if (!entry.getKey().equals(sender)) {
                     entry.getValue().sendMessage(
@@ -202,7 +204,15 @@ public class ChatServer extends Thread {
         public ServerGUI(ChatServer server) {
             setTitle(serverName + " - Server Console");
             setSize(900, 400);
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+            addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    //Inform clients that server is shutting down
+                    broadcastMessage(null, "Server is shutting down");
+                    System.exit(0);
+                }
+            });
             setLayout(new BorderLayout());
 
             // Log area
