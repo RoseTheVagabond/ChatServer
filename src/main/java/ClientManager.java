@@ -10,13 +10,13 @@ import java.util.Set;
 class ClientManager {
     private final Socket socket;
     private final int port;
-    private final ChatServer server;
+    private final Server server;
     private final BufferedReader in;
     private final PrintWriter out;
     private String username;
     private volatile boolean running = true;
 
-    public ClientManager(Socket socket, ChatServer server) throws IOException {
+    public ClientManager(Socket socket, Server server) throws IOException {
         this.socket = socket;
         this.port = socket.getPort();
         this.server = server;

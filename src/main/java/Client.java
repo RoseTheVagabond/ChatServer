@@ -5,7 +5,7 @@ import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.*;
 
-public class ChatClient extends Thread {
+public class Client extends Thread {
     private final String serverAddress;
     private final int serverPort;
     private Socket socket;
@@ -15,7 +15,7 @@ public class ChatClient extends Thread {
     private ClientWindow gui;
     private String username;
 
-    public ChatClient(String serverAddress, int serverPort) {
+    public Client(String serverAddress, int serverPort) {
         this.serverAddress = serverAddress;
         this.serverPort = serverPort;
         SwingUtilities.invokeLater(this::getClientName);
@@ -23,10 +23,10 @@ public class ChatClient extends Thread {
 
     //Method to fetch username of the client, so that the client's window is named after them
     private void getClientName() {
-        JFrame nameDialog = new JFrame("Enter Username");
-        nameDialog.setSize(300, 100);
-        nameDialog.setLayout(new BorderLayout());
-        nameDialog.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        JFrame nameFrame = new JFrame("Enter Username");
+        nameFrame.setSize(300, 100);
+        nameFrame.setLayout(new BorderLayout());
+        nameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JTextField nameField = new JTextField();
         JButton connectButton = new JButton("Connect");
@@ -34,7 +34,7 @@ public class ChatClient extends Thread {
         connectButton.addActionListener(e -> {
             username = nameField.getText().trim();
             if (!username.isEmpty()) {
-                nameDialog.dispose();
+                nameFrame.dispose();
                 openClientWindow();
             }
         });
@@ -42,17 +42,17 @@ public class ChatClient extends Thread {
         nameField.addActionListener(e -> {
             username = nameField.getText().trim();
             if (!username.isEmpty()) {
-                nameDialog.dispose();
+                nameFrame.dispose();
                 openClientWindow();
             }
         });
 
-        nameDialog.add(new JLabel("Enter your username:"), BorderLayout.NORTH);
-        nameDialog.add(nameField, BorderLayout.CENTER);
-        nameDialog.add(connectButton, BorderLayout.SOUTH);
+        nameFrame.add(new JLabel("Enter your username:"), BorderLayout.NORTH);
+        nameFrame.add(nameField, BorderLayout.CENTER);
+        nameFrame.add(connectButton, BorderLayout.SOUTH);
 
-        nameDialog.setLocationRelativeTo(null);
-        nameDialog.setVisible(true);
+        nameFrame.setLocationRelativeTo(null);
+        nameFrame.setVisible(true);
     }
 
     private void openClientWindow() {
@@ -70,8 +70,7 @@ public class ChatClient extends Thread {
 
             String serverMessage;
             while ((serverMessage = in.readLine()) != null) {
-                String finalServerMessage = serverMessage;
-                SwingUtilities.invokeLater(() -> gui.appendMessage(finalServerMessage));
+                gui.appendMessage(serverMessage);
 
                 //If the first message from the server was sent, it means that the username has been registered:)
                 if (serverMessage.contains("Welcome to the chat server!")) {
@@ -80,7 +79,12 @@ public class ChatClient extends Thread {
                 }
             }
             //Start a new thread for receiving messages
-            new Thread(this::receiveMessages).start();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    receiveMessages();
+                }
+            }).start();
 
         //If connection failed 3 seconds to read a message and then terminate the program
         } catch (IOException e) {
@@ -112,7 +116,6 @@ public class ChatClient extends Thread {
                     break;
                 }
             }
-        //Handling other IO Exceptions
         } catch (IOException e) {
             if (running) {
                 SwingUtilities.invokeLater(() ->
@@ -209,7 +212,7 @@ public class ChatClient extends Thread {
     public static void main(String[] args) {
         //Specifies the server address and port number to which the client connects
         SwingUtilities.invokeLater(() -> {
-            new ChatClient("localhost", 8080);
+            new Client("localhost", 8080);
         });
     }
 }

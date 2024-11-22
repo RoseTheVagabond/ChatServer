@@ -10,7 +10,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-public class ChatServer extends Thread {
+public class Server extends Thread {
     private final int port;
     private final String serverName;
     private final Set<String> bannedPhrases;
@@ -21,7 +21,7 @@ public class ChatServer extends Thread {
     private volatile boolean running = true;
     private final ServerGUI gui;
 
-    public ChatServer() throws IOException {
+    public Server() throws IOException {
         String configFile = "/Users/rubyrover/Desktop/PJATK/UTP/Project2/src/main/java/server_config.properties";
         Map<String, String> config = loadConfiguration(configFile);
 
@@ -55,7 +55,7 @@ public class ChatServer extends Thread {
             config.put("server.port", "8080");
         }
         if (!config.containsKey("server.name")) {
-            config.put("server.name", "ChatServer");
+            config.put("server.name", "Server");
         }
         if (!config.containsKey("banned.phrases")) {
             config.put("banned.phrases", "");
@@ -203,7 +203,7 @@ public class ChatServer extends Thread {
         private final DefaultListModel<String> bannedPhrasesModel;
         private final JTextField newPhraseField;
 
-        public ServerGUI(ChatServer server) {
+        public ServerGUI(Server server) {
             setTitle(serverName + " - Server Console");
             setSize(900, 400);
             setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -290,7 +290,7 @@ public class ChatServer extends Thread {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             try {
-                ChatServer server = new ChatServer();
+                Server server = new Server();
                 server.start();
             } catch (IOException e) {
                 e.printStackTrace();
