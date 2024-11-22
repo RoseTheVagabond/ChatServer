@@ -25,19 +25,17 @@ class ClientManager {
     }
 
     public void start() throws IOException {
-        // Send welcome message and prompt for username
+        //First message from the server (confirms the client has connected and username is entered)
         sendMessage("Welcome to the chat server!");
 
-        // Read username from client
         username = in.readLine();
         if (username == null || username.trim().isEmpty()) {
             username = "Anonymous";
         }
 
-        // Register client
+        //Save data about the client on the server
         server.registerClient(username, this);
 
-        // Send instructions
         sendMessage("Instructions:");
         sendMessage("- To send to all: just type your message");
         sendMessage("- To send to specific user: @username message");
@@ -58,6 +56,7 @@ class ClientManager {
         running = false;
 
         try {
+            //Removes disconnected client from server's data
             server.removeClient(username);
 
             if (!socket.isClosed()) {
@@ -69,6 +68,7 @@ class ClientManager {
     }
 
     private void handleMessage(String message) {
+        //Get a list of banned phrases
         if (message.equals("!banned")) {
             sendMessage("Banned phrases: " + String.join(", ", server.getBannedPhrases()));
             return;
@@ -77,6 +77,7 @@ class ClientManager {
         if (message.startsWith("@")) {
             handleDirectMessage(message);
         } else {
+            //Send to all users (default behaviour)
             server.broadcastMessage(username, message);
         }
     }
@@ -88,8 +89,8 @@ class ClientManager {
         String recipients = parts[0].substring(1);
         String content = parts[1];
 
+        //Send to all except specified users
         if (recipients.startsWith("!")) {
-            // Send to all except specified users
             Set<String> excludedUsers = new HashSet<>(Arrays.asList(
                     recipients.substring(1).split(",")
             ));
@@ -97,7 +98,7 @@ class ClientManager {
             actualRecipients.removeAll(excludedUsers);
             server.broadcastMessage(username, content, actualRecipients);
         } else {
-            // Send to specific users
+            //Send to specific users
             Set<String> targetUsers = new HashSet<>(Arrays.asList(recipients.split(",")));
             server.broadcastMessage(username, content, targetUsers);
         }

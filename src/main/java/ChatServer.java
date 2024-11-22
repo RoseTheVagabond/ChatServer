@@ -14,6 +14,8 @@ public class ChatServer extends Thread {
     private final int port;
     private final String serverName;
     private final Set<String> bannedPhrases;
+
+    //ConcurrentHashMap instead of a regular one to help with changing data by multiple ClientManagers
     private final Map<String, ClientManager> clients = new ConcurrentHashMap<>();
     private ServerSocket serverSocket;
     private volatile boolean running = true;
@@ -53,7 +55,7 @@ public class ChatServer extends Thread {
             config.put("server.port", "8080");
         }
         if (!config.containsKey("server.name")) {
-            config.put("server.name", "JavaChatServer");
+            config.put("server.name", "ChatServer");
         }
         if (!config.containsKey("banned.phrases")) {
             config.put("banned.phrases", "");
@@ -62,7 +64,7 @@ public class ChatServer extends Thread {
         return config;
     }
 
-    public void updateBannedPhrases(String... phrases) {
+    public void updateBannedPhrases(String[] phrases) {
         bannedPhrases.clear();
         for (String phrase : phrases) {
             if (!phrase.trim().isEmpty()) {
@@ -92,6 +94,7 @@ public class ChatServer extends Thread {
         }
 
         SwingUtilities.invokeLater(() -> gui.updateBannedPhrasesList());
+        //Notify clients that banned phrases have been updated
         broadcastMessage(null, "Banned phrases have been updated");
     }
 
@@ -194,7 +197,6 @@ public class ChatServer extends Thread {
         broadcastMessage(null, clientList);
     }
 
-    // Inner class for ServerGUI (remains the same as in previous implementation)
     class ServerGUI extends JFrame {
         private final JTextArea logArea;
         private final JList<String> bannedPhrasesList;
@@ -215,20 +217,20 @@ public class ChatServer extends Thread {
             });
             setLayout(new BorderLayout());
 
-            // Log area
+            //Log area
             logArea = new JTextArea();
             logArea.setEditable(false);
             JScrollPane logScrollPane = new JScrollPane(logArea);
             add(logScrollPane, BorderLayout.CENTER);
 
-            // Banned phrases panel
+            //Banned phrases panel
             JPanel bannedPhrasesPanel = new JPanel(new BorderLayout());
             bannedPhrasesModel = new DefaultListModel<>();
             bannedPhrasesList = new JList<>(bannedPhrasesModel);
             JScrollPane listScrollPane = new JScrollPane(bannedPhrasesList);
             bannedPhrasesPanel.add(listScrollPane, BorderLayout.CENTER);
 
-            // Add new phrase section
+            //Add new banned phrase panel
             JPanel addPhrasePanel = new JPanel(new FlowLayout());
             newPhraseField = new JTextField(20);
             JButton addButton = new JButton("Add Phrase");
@@ -264,7 +266,7 @@ public class ChatServer extends Thread {
             bannedPhrasesPanel.add(addPhrasePanel, BorderLayout.SOUTH);
             add(bannedPhrasesPanel, BorderLayout.EAST);
 
-            // Initial update of banned phrases list
+            //Updating banned phrases at the start of the program (double-checking that it is loaded correctly)
             updateBannedPhrasesList();
         }
 

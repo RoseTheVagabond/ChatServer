@@ -167,13 +167,13 @@ public class ChatClient extends Thread {
             });
             setLayout(new BorderLayout());
 
-            // Chat display area
+            //Chat display area
             chatArea = new JTextArea();
             chatArea.setEditable(false);
             JScrollPane scrollPane = new JScrollPane(chatArea);
             add(scrollPane, BorderLayout.CENTER);
 
-            // Message input panel
+            //Panel for sending messages
             JPanel messagePanel = new JPanel(new BorderLayout());
             messageField = new JTextField();
             sendButton = new JButton("Send");
@@ -181,7 +181,7 @@ public class ChatClient extends Thread {
             sendButton.addActionListener(e -> {
                 String message = messageField.getText().trim();
                 if (!message.isEmpty()) {
-                    ChatClient.this.sendMessage(message);
+                    sendMessage(message);
                     messageField.setText("");
                 }
             });
@@ -189,7 +189,7 @@ public class ChatClient extends Thread {
             messageField.addActionListener(e -> {
                 String message = messageField.getText().trim();
                 if (!message.isEmpty()) {
-                    ChatClient.this.sendMessage(message);
+                    sendMessage(message);
                     messageField.setText("");
                 }
             });
