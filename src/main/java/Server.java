@@ -10,7 +10,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-public class Server extends Thread {
+public class Server {
     private final int port;
     private final String serverName;
     private final Set<String> bannedPhrases;
@@ -20,6 +20,7 @@ public class Server extends Thread {
     private ServerSocket serverSocket;
     private volatile boolean running = true;
     private final ServerGUI gui;
+    private Thread serverThread;
 
     public Server() throws IOException {
         String configFile = "/Users/rubyrover/Desktop/PJATK/UTP/Project2/src/main/java/server_config.properties";
@@ -102,8 +103,7 @@ public class Server extends Thread {
         return bannedPhrases;
     }
 
-    @Override
-    public void run() {
+    private void runServer() {
         try {
             serverSocket = new ServerSocket(port);
             gui.appendLog(serverName + " started on port " + port);
@@ -125,6 +125,11 @@ public class Server extends Thread {
         } catch (IOException e) {
             gui.appendLog("Server error: " + e.getMessage());
         }
+    }
+
+    public void start() {
+        serverThread = new Thread(this::runServer);
+        serverThread.start();
     }
 
     private void handleNewClient(Socket clientSocket) {

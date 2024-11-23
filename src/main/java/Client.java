@@ -5,7 +5,7 @@ import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.*;
 
-public class Client extends Thread {
+public class Client {
     private final String serverAddress;
     private final int serverPort;
     private Socket socket;
@@ -58,11 +58,10 @@ public class Client extends Thread {
     private void openClientWindow() {
         gui = new ClientWindow(username);
         gui.setVisible(true);
-        start();
+        connect();
     }
 
-    @Override
-    public void run() {
+    public void connect() {
         try {
             socket = new Socket(serverAddress, serverPort);
             out = new PrintWriter(socket.getOutputStream(), true);
@@ -86,15 +85,30 @@ public class Client extends Thread {
                 }
             }).start();
 
-        //If connection failed 3 seconds to read a message and then terminate the program
         } catch (IOException e) {
-            gui.appendMessage("Error connecting to server: " + e.getMessage());
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
-            shutdown();
+            SwingUtilities.invokeLater(() -> {
+                //Create and show error popup if the server is unreachable
+                JFrame errorFrame = new JFrame("Connection Error");
+                errorFrame.setSize(300, 100);
+                errorFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                errorFrame.setLayout(new BorderLayout());
+
+                JLabel errorMessage = new JLabel("Failed to connect to the server", SwingConstants.CENTER);
+                errorFrame.add(errorMessage, BorderLayout.CENTER);
+
+                JButton okButton = new JButton("OK");
+                okButton.addActionListener(event -> {
+                    errorFrame.dispose();
+                    shutdown();
+                });
+
+                JPanel buttonPanel = new JPanel();
+                buttonPanel.add(okButton);
+                errorFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+                errorFrame.setLocationRelativeTo(null);
+                errorFrame.setVisible(true);
+            });
         }
     }
 

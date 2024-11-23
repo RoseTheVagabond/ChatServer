@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-class ClientManager {
+class ClientManager extends Thread {
     private final Socket socket;
     private final int port;
     private final Server server;
@@ -24,11 +24,16 @@ class ClientManager {
         this.out = new PrintWriter(socket.getOutputStream(), true);
     }
 
-    public void start() throws IOException {
+    @Override
+    public void run() {
         //First message from the server (confirms the client has connected and username is entered)
         sendMessage("Welcome to the chat server!");
 
-        username = in.readLine();
+        try {
+            username = in.readLine();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         if (username == null || username.trim().isEmpty()) {
             username = "Anonymous";
         }
@@ -44,7 +49,12 @@ class ClientManager {
         sendMessage("- To get banned phrases: !banned");
 
         String message;
-        while (running && (message = in.readLine()) != null) {
+        while (true) {
+            try {
+                if (!(running && (message = in.readLine()) != null)) break;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             handleMessage(message);
         }
 
